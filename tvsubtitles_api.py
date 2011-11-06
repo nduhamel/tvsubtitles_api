@@ -26,7 +26,7 @@ import lxml.html
 from BeautifulSoup import UnicodeDammit
 
 from cache import CacheHandler
-from tvsubtitles_exceptions import (tvsubtitles_error, tvsubtitles_userabort, tvsubtitles_shownotfound,
+from tvsubtitles_exceptions import (tvsubtitles_error, tvsubtitles_shownotfound,
 	tvsubtitles_seasonnotfound, tvsubtitles_episodenotfound, tvsubtitles_languagenotfound,
 	 tvsubtitles_attributenotfound)
 
@@ -194,7 +194,15 @@ class EpisodeParser:
 		divs = self.doc.xpath('//div[@class="subtitlen"]')
 		for div in divs:
 			release = {}
+			release['download_url']= 'http://www.tvsubtitles.net'+ div.getparent().get('href')
 			for ele in div.iterchildren():
+				if ele.tag == 'div':
+					ele = ele.find('span')
+					for span in ele.findall('span'):
+						if span.get('style') == 'color:red':
+							release['bad'] = int(span.text_content())
+						if span.get('style')== 'color:green':
+							release['good'] = int(span.text_content())
 				if ele.tag == 'h5':
 					release['name'] = ele.text_content()
 					lang = ele.find('img').get('src').split('/')[-1].split('.')[0]
@@ -486,7 +494,7 @@ class TvSubtitles:
 		
 		self.config['url_searchSeries'] = "http://www.tvsubtitles.net/search.php"
 		self.config['url_serie_season'] = 'http://www.tvsubtitles.net/tvshow-%s-%s.html'
-		self.config['url_episode'] = "http://www.tvsubtitles.net/episode-%s.html" 
+		self.config['url_episode'] = "http://www.tvsubtitles.net/episode-%s.html"
 				
 	def _getTempDir(self):
 		"""Returns the [system temp dir]/tvsubtitle_api
