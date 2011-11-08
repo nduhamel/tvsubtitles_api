@@ -29,8 +29,7 @@ from cache import CacheHandler
 from tvsubtitles_exceptions import (tvsubtitles_error, tvsubtitles_shownotfound,
 	tvsubtitles_seasonnotfound, tvsubtitles_episodenotfound, tvsubtitles_languagenotfound,
 	 tvsubtitles_attributenotfound)
-
-logging.basicConfig(level = logging.DEBUG)
+from parsers import (TvShowSearchParser, TvSowParser, EpisodeParser)
 
 lastTimeout = None
 
@@ -52,6 +51,7 @@ class ShowContainer(dict):
 	pass
 
 def decode_html(html_string):
+	""" Used for correctly decode html"""
 	converted = UnicodeDammit(html_string, isHTML=True)
 	if not converted.unicode:
 		raise UnicodeDecodeError(
@@ -59,9 +59,9 @@ def decode_html(html_string):
 			', '.join(converted.triedEncodings))
 	return converted.unicode
 
-#Used for sorting results
 def dice_coefficient(a, b):
-	"""From: http://en.wikibooks.org/wiki/Algorithm_Implementation/Strings/Dice%27s_coefficient#Python
+	""" Used for sort search results
+	From: http://en.wikibooks.org/wiki/Algorithm_Implementation/Strings/Dice%27s_coefficient#Python
 	dice coefficient 2nt/na + nb."""
 	if not len(a) or not len(b): return 0.0
 	if len(a) == 1:  a=a+u'.'
@@ -80,160 +80,9 @@ def dice_coefficient(a, b):
 	dice_coeff = overlap * 2.0/(len(a_bigrams) + len(b_bigrams))
 	return dice_coeff
 
-class TvShowSearchParser:
-		
-	def __init__(self, doc):
-		self.doc = doc
-	
-	def parse(self):
-		"""
-		Return search result:
-		[ {'name': , 'link': ,  'id': , 'languages': , }, ...]
-		"""
-		res_list = self.doc.xpath('/html/body/div/div[3]/div/ul')[0]
-		data = []
-		for li in res_list.iterchildren():
-			data.append(self.parse_li(li.getchildren()[0]))
-		return data
-			
-	def parse_li(self, li):
-		"""Parse the li of a ul results.
-		
-		*Returns*
-			a dictionary with parsed data.
-		"""
-		data = {}
-		data["languages"] = []
-		for ele in li.iterchildren():
-			if ele.tag == 'a':
-				data['id'] = re.findall(r"\d+", ele.get('href'))[0]
-				data['name'] = ele.text_content()
-			elif ele.tag == 'img':
-				data['languages'].append(ele.get('alt'))
-		return data
 
-class TvSowParser:
-		
-	def __init__(self, doc):
-		self.doc = doc
-	
-	def parse(self):
-		"""
-		Return a dict that contain all serie's data:
-		key:
-			* name
-			* season (num , epdict)
-			* known_season  [1, 2, ...]
-		"""
-		data = {}
-		data['name'] = self.doc.xpath('/html/body/div/div[3]/div/h2')[0].text_content()
-		p = self.doc.xpath('/html/body/div/div[3]/div/p')[0]
-		cur, other_seasons = self.parse_seasons(p)
-		table = self.doc.xpath('//table[@id="table5"]')[0]
-		episodes = self.parse_ep(table)
-		data['seasons'] = {cur: episodes}
-		data['other_seasons'] = other_seasons
-		return data
 
-		
-	def parse_seasons(self, p):
-		""" return list of available seasons"""
-		data = []
-		for ele in p.iterchildren():
-			if ele.tag == 'font':
-				cur =  int(ele.text_content().split(' ')[1])
-			elif ele.tag == 'a':
-				b = ele.find('b')
-				data.append( int(ele.text_content().split(' ')[1]) )
-		return (cur, sorted(data))
-	
-	def parse_ep(self, table):
-		"""
-		Return episode dict
-		keys:
-			* id int
-			* num int
-			* name
-			* lan ['en', 'fr' ...]
-		"""
-		episodes = []
-		for ele in list(table)[1:-2]:
-			td = list(ele)
-			ep = {}
-			ep['num'] = int(td[0].text_content().split('x')[1])
-			a = td[1].find('a')
-			ep['id'] = int(re.findall(r"\d+", a.get('href'))[0])
-			ep['name'] = a.text_content()
-			ep['lang'] = []
-			for ele in td[3].find('nobr'):
-				if ele.tag == 'a':
-					ep['lang'].append(ele.find('img').get('alt'))
-			episodes.insert(0,ep)
-		return episodes
 
-class EpisodeParser:
-	def __init__(self, doc):
-		self.doc = doc
-	
-	def parse(self):
-		"""
-		data form:
-		{ 'en': 
-			[{ 'name':
-			  'rip':
-			  'release':
-			  'uploaded_date':
-			  'author':
-			  'downloaded':
-			  'good':
-			  'bad':
-			  }, ...],
-		}
-		"""
-		data = {}
-		divs = self.doc.xpath('//div[@class="subtitlen"]')
-		for div in divs:
-			release = {}
-			release['download_url']= 'http://www.tvsubtitles.net'+ div.getparent().get('href')
-			for ele in div.iterchildren():
-				if ele.tag == 'div':
-					ele = ele.find('span')
-					for span in ele.findall('span'):
-						if span.get('style') == 'color:red':
-							release['bad'] = int(span.text_content())
-						if span.get('style')== 'color:green':
-							release['good'] = int(span.text_content())
-				if ele.tag == 'h5':
-					release['name'] = ele.text_content()
-					lang = ele.find('img').get('src').split('/')[-1].split('.')[0]
-				if ele.tag == 'p':
-					if ele.get('title') == 'rip':
-						release['rip'] = ele.text_content().strip()
-					if ele.get('title') == 'release':
-						release['release'] = ele.text_content().strip()
-					if ele.get('title') == 'uploaded':
-						release['uploaded'] = self.parse_date (
-							ele.text_content().strip()
-						)
-					if ele.get('title') == 'author':
-						release['author'] = ele.text_content().strip()
-						if not release['author']:
-							release['author'] = "anonymous"
-					if ele.get('title') == 'downloaded':
-						release['downloaded'] = int(ele.text_content().strip())
-			if lang not in data.keys():
-						data[lang] = []
-			data[lang].append(release)
-		return data
-
-	def parse_date(self, string):
-		date, time =  string.split(" ")
-		date = date.split('.')
-		time = time.split(':')
-		return datetime.datetime(
-			int(date[2]), int(date[1]), int(date[0]), 
-			int(time[0]), int(time[1]), int(time[2])
-		)
 				
 class Show(dict):
 	"""Holds a dict of seasons, and show data.
@@ -670,6 +519,7 @@ class TvSubtitles:
 	#end _set_item
 
 if __name__ == '__main__':
+	logging.basicConfig(level = logging.DEBUG)
 	t= TvSubtitles()
 	print t['The WALKING DEAD'][2][3]['available_languages']
 	print "Trying to get languages"
