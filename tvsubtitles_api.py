@@ -171,7 +171,6 @@ class Show(dict):
             searchresult = cur_season.search(term = term, key = key)
             if len(searchresult) != 0:
                 results.extend(searchresult)
-        #end for cur_season
         return results
 
 class Season(dict):
@@ -406,14 +405,12 @@ class TvSubtitles:
             ui = BaseUI(config = self.config)
         return ui.selectSeries(allSeries)
         
-    #OK
     def _getetsrc(self, url, data = None):
         """Loads a URL using caching, returns an ElementTree of the source
         """
         src = self._loadUrl(url, data)
         return lxml.html.fromstring(decode_html(src))
         
-    #OK
     def _loadUrl(self, url, data, recache = False):
         global lastTimeout
         try:
@@ -435,7 +432,6 @@ class TvSubtitles:
             if not str(errormsg).startswith('HTTP Error'):
                 lastTimeout = datetime.datetime.now()
             raise tvsubtitles_error("Could not connect to server: %s" % (errormsg))
-        #end try
         
         # handle gzipped content,
         # http://dbr.lighthouseapp.com/projects/13342/tickets/72-gzipped-data-patch
@@ -512,7 +508,6 @@ class TvSubtitles:
         if ep not in self.shows[sid][seas]:
             self.shows[sid][seas][ep] = Episode(season = self.shows[sid][seas])
         self.shows[sid][seas][ep][attrib] = value
-    #end _set_item
 
 if __name__ == '__main__':
     logging.basicConfig(level = logging.DEBUG)
