@@ -28,7 +28,6 @@ import tempfile
 import lxml.html
 from BeautifulSoup import UnicodeDammit
 
-from cache import CacheHandler
 from tvsubtitles_exceptions import (tvsubtitles_error, tvsubtitles_shownotfound,
     tvsubtitles_seasonnotfound, tvsubtitles_episodenotfound, tvsubtitles_languagenotfound,
      tvsubtitles_attributenotfound)
@@ -294,7 +293,7 @@ class LanguageGetter:
 
 class TvSubtitles:
         
-    def __init__(self, language = None, custom_ui= None, cache = True):
+    def __init__(self, language = None, custom_ui= None, urlopener = None):
         """
         language (2 character language abbreviation):
             The language of the returned data. Is also the language search
@@ -308,43 +307,22 @@ class TvSubtitles:
         else:
             self.config['language'] = language
         
-        if cache is True:
-            self.config['cache_enabled'] = True
-            self.config['cache_location'] = self._getTempDir()
-            self.urlopener = urllib2.build_opener(
-                CacheHandler(self.config['cache_location'])
-            )
-
-        elif cache is False:
+        if urlopener is None:
             self.config['cache_enabled'] = False
             self.urlopener = urllib2.build_opener() # default opener with no caching
-
-        elif isinstance(cache, basestring):
-            self.config['cache_enabled'] = True
-            self.config['cache_location'] = cache
-            self.urlopener = urllib2.build_opener(
-                CacheHandler(self.config['cache_location'])
-            )
-
-        elif isinstance(cache, urllib2.OpenerDirector):
+        elif isinstance(urlopener, urllib2.OpenerDirector):
             # If passed something from urllib2.build_opener, use that
             log().debug("Using %r as urlopener" % cache)
             self.config['cache_enabled'] = True
             self.urlopener = cache
-
         else:
-            raise ValueError("Invalid value for Cache %r (type was %s)" % (cache, type(cache)))
+            raise ValueError("Invalid value for URLopener %r (type was %s)" % (cache, type(cache)))
         
         self.config['custom_ui'] =  custom_ui
         
         self.config['url_searchSeries'] = "http://www.tvsubtitles.net/search.php"
         self.config['url_serie_season'] = 'http://www.tvsubtitles.net/tvshow-%s-%s.html'
         self.config['url_episode'] = "http://www.tvsubtitles.net/episode-%s.html"
-                
-    def _getTempDir(self):
-        """Returns the [system temp dir]/tvsubtitle_api
-        """
-        return os.path.join(tempfile.gettempdir(), "tvsubtitle_api")
         
     def __getitem__(self, key):
         """Handles tvsubtitles_instance['seriesname'] calls.
@@ -406,14 +384,12 @@ class TvSubtitles:
             ui = BaseUI(config = self.config)
         return ui.selectSeries(allSeries)
         
-    #OK
     def _getetsrc(self, url, data = None):
         """Loads a URL using caching, returns an ElementTree of the source
         """
         src = self._loadUrl(url, data)
         return lxml.html.fromstring(decode_html(src))
         
-    #OK
     def _loadUrl(self, url, data, recache = False):
         global lastTimeout
         try:
@@ -422,30 +398,10 @@ class TvSubtitles:
                 resp = self.urlopener.open(url)
             else:
                 resp = self.urlopener.open(url, data)
-                
-            if 'x-local-cache' in resp.headers:
-                log().debug("URL %s was cached in %s" % (
-                    url,
-                    resp.headers['x-local-cache'])
-                )
-                if recache:
-                    log().debug("Attempting to recache %s" % url)
-                    resp.recache()
         except (IOError, urllib2.URLError), errormsg:
             if not str(errormsg).startswith('HTTP Error'):
                 lastTimeout = datetime.datetime.now()
             raise tvsubtitles_error("Could not connect to server: %s" % (errormsg))
-        #end try
-        
-        # handle gzipped content,
-        # http://dbr.lighthouseapp.com/projects/13342/tickets/72-gzipped-data-patch
-        if 'gzip' in resp.headers.get("Content-Encoding", ''):
-            if gzip:
-                stream = StringIO.StringIO(resp.read())
-                gz = gzip.GzipFile(fileobj=stream)
-                return gz.read()
-            
-            raise tvsubtitle_error("Received gzip data from TVsubtitles.net, but could not correctly handle it")
         
         return resp.read()
     
@@ -512,7 +468,6 @@ class TvSubtitles:
         if ep not in self.shows[sid][seas]:
             self.shows[sid][seas][ep] = Episode(season = self.shows[sid][seas])
         self.shows[sid][seas][ep][attrib] = value
-    #end _set_item
 
 if __name__ == '__main__':
     logging.basicConfig(level = logging.DEBUG)
@@ -520,5 +475,3 @@ if __name__ == '__main__':
     print t['The WALKING DEAD'][2][3]['available_languages']
     print "Trying to get languages"
     print t['The WALKING DEAD'][2][3]['languages']['fr']
-    
-    
