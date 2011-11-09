@@ -136,6 +136,7 @@ class EpisodeParser:
         for div in divs:
             release = {}
             release['download_url']= 'http://www.tvsubtitles.net'+ div.getparent().get('href')
+	    release['download_url'] = release['download_url'].replace('subtitle-','download-')
             for ele in div.iterchildren():
                 if ele.tag == 'div':
                     ele = ele.find('span')
