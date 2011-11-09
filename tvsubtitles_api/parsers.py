@@ -154,9 +154,8 @@ class EpisodeParser:
                     if ele.get('title') == 'release':
                         release['release'] = ele.text_content().strip()
                     if ele.get('title') == 'uploaded':
-                        release['uploaded'] = self.parse_date (
-                            ele.text_content().strip()
-                        )
+                        release['uploaded'] = datetime.datetime.strptime(ele.text_content().strip()
+                                                    , '%d.%m.%y %H:%M:%S')
                     if ele.get('title') == 'author':
                         release['author'] = ele.text_content().strip()
                         if not release['author']:
@@ -167,12 +166,3 @@ class EpisodeParser:
                         data[lang] = []
             data[lang].append(release)
         return data
-
-    def parse_date(self, string):
-        date, time =  string.split(" ")
-        date = date.split('.')
-        time = time.split(':')
-        return datetime.datetime(
-            int(date[2]), int(date[1]), int(date[0]), 
-            int(time[0]), int(time[1]), int(time[2])
-        )
