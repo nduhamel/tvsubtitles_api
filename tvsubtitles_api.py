@@ -28,7 +28,6 @@ import tempfile
 import lxml.html
 from BeautifulSoup import UnicodeDammit
 
-from cache import CacheHandler
 from tvsubtitles_exceptions import (tvsubtitles_error, tvsubtitles_shownotfound,
     tvsubtitles_seasonnotfound, tvsubtitles_episodenotfound, tvsubtitles_languagenotfound,
      tvsubtitles_attributenotfound)
@@ -294,7 +293,7 @@ class LanguageGetter:
 
 class TvSubtitles:
         
-    def __init__(self, language = None, custom_ui= None, cache = True):
+    def __init__(self, language = None, custom_ui= None):
         """
         language (2 character language abbreviation):
             The language of the returned data. Is also the language search
@@ -308,32 +307,8 @@ class TvSubtitles:
         else:
             self.config['language'] = language
         
-        if cache is True:
-            self.config['cache_enabled'] = True
-            self.config['cache_location'] = self._getTempDir()
-            self.urlopener = urllib2.build_opener(
-                CacheHandler(self.config['cache_location'])
-            )
-
-        elif cache is False:
-            self.config['cache_enabled'] = False
-            self.urlopener = urllib2.build_opener() # default opener with no caching
-
-        elif isinstance(cache, basestring):
-            self.config['cache_enabled'] = True
-            self.config['cache_location'] = cache
-            self.urlopener = urllib2.build_opener(
-                CacheHandler(self.config['cache_location'])
-            )
-
-        elif isinstance(cache, urllib2.OpenerDirector):
-            # If passed something from urllib2.build_opener, use that
-            log().debug("Using %r as urlopener" % cache)
-            self.config['cache_enabled'] = True
-            self.urlopener = cache
-
-        else:
-            raise ValueError("Invalid value for Cache %r (type was %s)" % (cache, type(cache)))
+        
+        self.urlopener = urllib2.build_opener() # default opener with no caching
         
         self.config['custom_ui'] =  custom_ui
         
