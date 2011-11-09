@@ -33,6 +33,12 @@ from tvsubtitles_exceptions import (tvsubtitles_error, tvsubtitles_shownotfound,
      tvsubtitles_attributenotfound)
 from parsers import (TvShowSearchParser, TvSowParser, EpisodeParser)
 
+
+__license__ = 'GPLv2'
+__version__ = 'a1'
+__maintainer__ = 'Nicolas Duhamel'
+
+
 lastTimeout = None
 
 def log():
@@ -317,6 +323,7 @@ class TvSubtitles:
             self.urlopener = cache
         else:
             raise ValueError("Invalid value for URLopener %r (type was %s)" % (cache, type(cache)))
+        
         
         self.config['custom_ui'] =  custom_ui
         
