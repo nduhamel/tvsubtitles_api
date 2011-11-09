@@ -20,10 +20,8 @@
 import urllib2
 import urllib
 import logging
-import re
 import datetime
 import os
-import tempfile
 
 import lxml.html
 from BeautifulSoup import UnicodeDammit
