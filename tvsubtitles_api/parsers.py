@@ -165,4 +165,10 @@ class EpisodeParser:
             if lang not in data.keys():
                         data[lang] = []
             data[lang].append(release)
-        return data
+        return self.sort_by_rate(data)
+
+    def sort_by_rate(self,data):
+    	"""Sorting subtitles by rate"""
+	for lang,list_sub in data.items():
+		data[lang] = sorted(list_sub, key=lambda k: k['good'], reverse=True) 
+    	return data
