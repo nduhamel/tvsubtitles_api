@@ -3,7 +3,7 @@
 import os
 
 from distutils.core import setup
-from pytpb import __version__, __maintainer__, __license__
+from tvsubtitles_api import __version__, __maintainer__, __license__
 
 setup(name='tvsubtitles_api',
       description='python client for tvsubtitles.net website',
@@ -13,7 +13,7 @@ setup(name='tvsubtitles_api',
       version=__version__,
       maintainer=__maintainer__,
       url='https://github.com/nduhamel/tvsubtitles_api',
-      py_modules=['tvsubtitles_api'],
+      packages=['tvsubtitles_api'],
       classifiers = [
           'Development Status :: 2 - Pre-Alpha',
           'Intended Audience :: Developers',
