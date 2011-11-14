@@ -269,16 +269,13 @@ class Episode(dict):
                 return self
 
 class LanguageGetter:
-    def __init__(self, tvsubtitles, eid, langlist):
+    def __init__(self, tvsubtitles, eid):
         self._tvsubtitles = tvsubtitles
         self.config = tvsubtitles.config 
         self._eid =eid
         self._data = False
-        self._available = langlist
         
     def __getitem__(self, key):
-        if key not in self._available:
-            raise tvsubtitles_languagenotfound("Language %s cannot be found for episode %s" % (key, self._eid))
         if not self._data:
             log().debug('Getting all series language for %s' % (self._eid))
             self._load()
@@ -440,7 +437,7 @@ class TvSubtitles:
                 self._setItem(sid, season, ep['num'], 'episodename', ep['name'])
                 self._setItem(sid, season, ep['num'], 'available_languages', ep['lang'])
                 self._setItem(sid, season, ep['num'], 'languages', 
-                    LanguageGetter(self, ep['id'], ep['lang'] ) 
+                    LanguageGetter(self, ep['id'] ) 
                 )
 
     def _setShowData(self, sid, key, value):
