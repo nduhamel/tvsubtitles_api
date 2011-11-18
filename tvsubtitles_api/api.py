@@ -33,7 +33,7 @@ from parsers import (TvShowSearchParser, TvSowParser, EpisodeParser)
 
 
 __license__ = 'GPLv2'
-__version__ = 'a1'
+__version__ = '0.1a'
 __maintainer__ = 'Nicolas Duhamel'
 
 

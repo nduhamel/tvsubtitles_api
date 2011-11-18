@@ -1,0 +1,6 @@
+README
+setup.py
+tvsubtitles_api/__init__.py
+tvsubtitles_api/api.py
+tvsubtitles_api/parsers.py
+tvsubtitles_api/tvsubtitles_exceptions.py

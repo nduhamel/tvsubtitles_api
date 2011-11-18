@@ -15,8 +15,9 @@ setup(name='tvsubtitles_api',
       url='https://github.com/nduhamel/tvsubtitles_api',
       packages=['tvsubtitles_api'],
       classifiers = [
-          'Development Status :: 2 - Pre-Alpha',
+          'Development Status :: 3 - Alpha',
           'Intended Audience :: Developers',
+          'License :: OSI Approved :: GNU General Public License (GPL)',
           'Topic :: Software Development :: Libraries :: Python Modules',
           'Programming Language :: Python',
           'Operating System :: OS Independent'
